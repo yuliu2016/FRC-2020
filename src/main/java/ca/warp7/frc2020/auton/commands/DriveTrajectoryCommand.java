@@ -19,7 +19,9 @@ import edu.wpi.first.wpilibj2.command.CommandBase;
 
 import java.util.Objects;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.FutureTask;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 /**
  * Run a spline path on the field
@@ -32,38 +34,36 @@ public class DriveTrajectoryCommand extends CommandBase {
     private final TimedPath2d path;
 
     private boolean isFMSAttached;
-    private double rioTime;
+    private double startTime;
     private double trajectoryTime;
     private double totalTrajectoryTime;
     private boolean trajectoryStarted;
-    private double generationTimeMs;
-    private int generationLoopCount = 1;
+    private int generatorLoopCount = 1;
 
     private Pose2d offset;
     private Trajectory trajectory;
-    private FutureTask<Trajectory> trajectoryGenerator;
+    private Future<Trajectory> trajectoryGenerator;
+
+    // the executor to generate trajectories concurrently
+    private static final ExecutorService sharedExecutor =
+            Executors.newSingleThreadExecutor();
 
     public DriveTrajectoryCommand(TimedPath2d path) {
         this.path = path;
         Objects.requireNonNull(this.path, "path cannot be null");
         this.follower = path.getFollower();
         Objects.requireNonNull(this.follower, "follwer cannot be null");
-
         this.name = path.getName() + "+" + follower.getClass().getSimpleName();
         addRequirements(driveTrain);
     }
 
     private void calculateTrajectory() {
-        var newTime = Timer.getFPGATimestamp();
-        var dt = newTime - rioTime;
-        rioTime = newTime;
-
         // First make sure that we know where we are
         var robotState = driveTrain.getRobotState();
         var robotRelativeToTrajectory = robotState.relativeTo(offset);
 
-        // Add dt to the amount of time tracked
-        trajectoryTime += dt;
+        // Calculate current trajectory time
+        trajectoryTime = Timer.getFPGATimestamp() - startTime;
 
         // Sample based on relative time
         var sample = trajectory.sample(trajectoryTime);
@@ -73,17 +73,17 @@ public class DriveTrajectoryCommand extends CommandBase {
         var error = targetPose.minus(robotRelativeToTrajectory);
 
         // Correct for the error using the follower
-        var correctedVelocity = follower.calculateTrajectory(trajectory, sample, error);
+        var corrected = follower.calculateTrajectory(trajectory, sample, error);
 
         // Send signal to drive train
-        driveTrain.setChassisVelocity(correctedVelocity.getLinear(), correctedVelocity.getAngular());
+        driveTrain.setChassisVelocity(corrected.getLinear(), corrected.getAngular());
 
         // Write logs
         double v = sample.velocityMetersPerSecond;
         double w = v * sample.curvatureRadPerMeter;
 
-        double linearCorrection = correctedVelocity.getLinear() - v;
-        double angularCorrection = correctedVelocity.getAngular() - w;
+        double linearCorrection = corrected.getLinear() - v;
+        double angularCorrection = corrected.getAngular() - w;
 
         putNumber("Trajectory Time", trajectoryTime);
 
@@ -109,7 +109,7 @@ public class DriveTrajectoryCommand extends CommandBase {
         // only run if the trajectory is not started
         if (trajectoryGenerator == null || !trajectoryGenerator.isDone()) {
             // trajectories is not done yet
-            generationLoopCount++;
+            generatorLoopCount++;
         } else {
             // get the calculated trajectories
             try {
@@ -127,12 +127,12 @@ public class DriveTrajectoryCommand extends CommandBase {
             totalTrajectoryTime = trajectory.getTotalTimeSeconds();
 
             System.out.println("Finished Generating Trajectory in " +
-                    generationTimeMs + "ms, and " + generationLoopCount + " loops.");
+                    generatorLoopCount + " loops.");
             System.out.println("Computed Offset: " + offset);
             System.out.println("==== BEGIN TRAJECTORY FOLLOWING ====");
 
             trajectoryStarted = true;
-            rioTime = Timer.getFPGATimestamp();
+            startTime = Timer.getFPGATimestamp();
         }
     }
 
@@ -141,19 +141,7 @@ public class DriveTrajectoryCommand extends CommandBase {
         isFMSAttached = DriverStation.getInstance().isFMSAttached();
         System.out.println("Start Generating Trajectory: " + name);
         driveTrain.neutralOutput();
-        if (trajectoryGenerator != null) {
-            throw new IllegalStateException("Trajectory is already generated");
-        }
-        // create a new trajectory generator on another thread
-        trajectoryGenerator = new FutureTask<>(() -> {
-            var initialTime = System.nanoTime();
-            var result = path.asTrajectory();
-            generationTimeMs = (System.nanoTime() - initialTime) / 1E6;
-            return result;
-        });
-        Thread thread = new Thread(trajectoryGenerator);
-        thread.setName("Trajectory Generator");
-        thread.start();
+        trajectoryGenerator = sharedExecutor.submit(path::asTrajectory);
     }
 
     @Override

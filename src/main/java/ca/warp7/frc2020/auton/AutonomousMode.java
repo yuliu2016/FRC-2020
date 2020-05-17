@@ -5,11 +5,9 @@ import ca.warp7.frc2020.commands.FlywheelSpeedCommand;
 import ca.warp7.frc2020.commands.IntakingCommand;
 import ca.warp7.frc2020.commands.SingleFunctionCommand;
 import ca.warp7.frc2020.subsystems.Flywheel;
+import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.geometry.Pose2d;
-import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.ParallelDeadlineGroup;
-import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
-import edu.wpi.first.wpilibj2.command.WaitCommand;
+import edu.wpi.first.wpilibj2.command.*;
 
 @SuppressWarnings("unused")
 public class AutonomousMode {
@@ -122,11 +120,12 @@ public class AutonomousMode {
         );
     }
 
-    public static Command simplePath() {
+    public static Command pid_tuning() {
         return new SequentialCommandGroup(
                 SingleFunctionCommand.getResetAutonomousDrive(),
-                new RobotStateCommand(AutonomousPath.kRightSideFacingOuterGoal),
-                AutonomousPath.getTrenchOneBall()
+                new InstantCommand(() -> NetworkTableInstance.getDefault().setUpdateRate(0.01)),
+                new RobotStateCommand(new Pose2d()),
+                AutonomousPath.getPIDTuningPath()
         );
     }
 }

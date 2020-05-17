@@ -36,7 +36,11 @@ public final class Flywheel implements Subsystem {
         flywheelMasterNeo.setIdleMode(IdleMode.kCoast);
         flywheelMasterNeo.setOpenLoopRampRate(1);
         flywheelMasterNeo.enableVoltageCompensation(12.0);
-        MotorControlHelper.assignFollowerSparkMAX(flywheelMasterNeo, kFlywheelShooterFollowerID, true);
+        flywheelMasterNeo.burnFlash();
+
+        var follower = MotorControlHelper
+                .assignFollowerSparkMAX(flywheelMasterNeo, kFlywheelShooterFollowerID, true);
+        follower.burnFlash();
     }
 
     public double getRPS() {

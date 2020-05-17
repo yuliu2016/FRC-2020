@@ -32,7 +32,7 @@ public class AutonomousSelector {
         Mode_1(AutonomousMode::shoot3_backup),
         Mode_2(AutonomousMode::intakeThreeBalls),
         Mode_3(AutonomousMode::shoot3_intake3_shoot3),
-        Mode_4(AutonomousMode::simplePath);
+        Mode_4(AutonomousMode::pid_tuning);
 
         private Supplier<Command> mode;
 

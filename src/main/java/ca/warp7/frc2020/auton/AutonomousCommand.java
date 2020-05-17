@@ -19,7 +19,7 @@ public class AutonomousCommand extends CommandBase {
         } else {
 //            mode = selector.getSelectedMode().create();
         }
-        mode = AutonomousMode.shoot3_intake3_shoot3();
+        mode = AutonomousMode.pid_tuning();
 
         if (mode != null) {
             mode.schedule();

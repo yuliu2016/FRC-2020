@@ -31,6 +31,7 @@ public final class Intake implements Subsystem {
 
     private Intake() {
         intakeNeo550.setInverted(true);
+        intakeNeo550.burnFlash();
     }
 
     public void setSpeed(double speed) {
@@ -40,10 +41,6 @@ public final class Intake implements Subsystem {
 
     public void setExtended(boolean extended) {
         intakeExtensionPiston.set(extended);
-    }
-
-    public boolean isExtended() {
-        return intakeExtensionPiston.get();
     }
 
     public void toggle() {

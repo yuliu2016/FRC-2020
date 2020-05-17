@@ -62,18 +62,19 @@ public class AutonomousPath {
                 .convertTo(DriveTrajectoryCommand::new);
     }
 
-    public static Command getTrenchOneBall() {
-        return new TimedPath2d("three balls", kRightSideFacingOuterGoal)
-                .addPoint(kTrench1)
+    public static Command getOneMetreForward() {
+        return new TimedPath2d("one metre forwatrd", new Pose2d())
+                .addPoint(1.0, 0.0, 0.0)
                 .setConfig(createTrajectoryConfig())
                 .setFollower(new RamseteFollower())
                 .convertTo(DriveTrajectoryCommand::new);
     }
 
-    public static Command getOneMetreForward() {
-        return new TimedPath2d("one metre forwatrd", new Pose2d())
-                .addPoint(1.0, 0.0, 0.0)
-                .setConfig(createTrajectoryConfig())
+    public static Command getPIDTuningPath() {
+        return new TimedPath2d("pid tuner", new Pose2d())
+//                .addPoint(2.5, 0.0, 0.0)
+                .addPoint(4.0, -1.5, -90.0)
+                .setConfig(new TrajectoryConfig(2.0, 2.0))
                 .setFollower(new RamseteFollower())
                 .convertTo(DriveTrajectoryCommand::new);
     }

@@ -106,7 +106,7 @@ public class MotorControlHelper {
      * @param inverted whether the follower is inverted
      */
     @SuppressWarnings("resource")
-    public static void assignFollowerSparkMAX(
+    public static CANSparkMax assignFollowerSparkMAX(
             CANSparkMax master,
             int deviceID,
             boolean inverted
@@ -116,6 +116,7 @@ public class MotorControlHelper {
         follower.setIdleMode(CANSparkMax.IdleMode.kBrake);
         follower.follow(master, inverted);
         follower.setIdleMode(master.getIdleMode());
+        return follower;
     }
 
     /**

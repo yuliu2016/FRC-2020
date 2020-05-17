@@ -68,7 +68,7 @@ public final class Constants {
     public static final double kHighGearRampRate = 0.3;
 
     public static final PID kAutonLowGearVelocityPID =
-            new PID(0.2, 0.0, 0.0, 0.0);
+            new PID(0.0, 0.0, 0.0, 0.0);
     public static final PID kTeleopLowGearVelocityPID =
             new PID(0.0, 0.0, 0.0, 0.0);
     public static final PID kTeleopHighGearVelocityPID =
